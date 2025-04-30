@@ -30,7 +30,7 @@ interface ExerciseData {
 
 const Hearlink: React.FC = () => {
   // Base URL for API
-  const BASE_URL = '';
+  const BASE_URL = 'http://127.0.0.1:5003';
   
   // States
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -407,7 +407,7 @@ const Hearlink: React.FC = () => {
       });
     } else {
       setQuizFeedback({
-        message: 'Incorrect. The correct answer is shown above.',
+        message: 'Incorrect. The correct answer is.',
         isCorrect: false
       });
     }
@@ -837,29 +837,35 @@ const Hearlink: React.FC = () => {
                       <div className="mb-6">
                         <h5 className="text-lg font-semibold mb-2">Question {currentQuizIndex + 1} of {quizData.length}</h5>
                         <p className="mb-4">{quizData[currentQuizIndex].question}</p>
-                        
+
                         <div className="space-y-2">
-                          {quizData[currentQuizIndex].options.map((option, idx) => (
-                            <div 
-                              key={idx}
-                              onClick={() => setSelectedOption(idx)}
-                              className={`p-3 rounded-lg border cursor-pointer ${
-                                selectedOption === idx 
-                                  ? 'bg-blue-100 border-blue-500' 
-                                  : 'border-gray-300 hover:bg-gray-100'
-                              }`}
-                            >
-                              <div className="flex items-center">
-                                <div className={`h-5 w-5 mr-3 rounded-full flex items-center justify-center ${
-                                  selectedOption === idx ? 'bg-blue-500 text-white' : 'bg-gray-200'
-                                }`}>
-                                  {String.fromCharCode(65 + idx)}
+                          {quizData[currentQuizIndex].options.map((option, idx) => {
+                            const [label, ...textParts] = option.split('.');
+                            const optionText = textParts.join('.').trim();
+
+                            return (
+                                <div
+                                    key={idx}
+                                    onClick={() => setSelectedOption(idx)}
+                                    className={`p-3 rounded-lg border cursor-pointer ${
+                                        selectedOption === idx
+                                            ? 'bg-blue-100 border-blue-500'
+                                            : 'border-gray-300 hover:bg-gray-100'
+                                    }`}
+                                >
+                                  <div className="flex items-center">
+                                    <div className={`h-5 w-5 mr-3 rounded-full flex items-center justify-center ${
+                                        selectedOption === idx ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                                    }`}>
+                                      {label}
+                                    </div>
+                                    <span>{optionText}</span>
+                                  </div>
                                 </div>
-                                <span>{option}</span>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
+
                       </div>
 
                       {quizFeedback && (
@@ -874,8 +880,8 @@ const Hearlink: React.FC = () => {
                                 <p>{quizFeedback.message}</p>
                                 <p className="mt-2 font-medium">
                                   Correct answer: {quizData[currentQuizIndex].answer}. {
-                                    quizData[currentQuizIndex].options[quizData[currentQuizIndex].answer.charCodeAt(0) - 65]
-                                  }
+                                  quizData[currentQuizIndex].options[quizData[currentQuizIndex].answer.charCodeAt(0) - 65]
+                                }
                                 </p>
                               </div>
                             )}
