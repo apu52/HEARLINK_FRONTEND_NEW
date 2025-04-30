@@ -57,7 +57,8 @@ const SignupForm = ({ userType }: SignupFormProps) => {
         setErrors({ username: data.error || "Registration failed" });
 
       } else {
-        navigate("/login-student");
+        navigate(userType === "teacher" ? "/login-teacher" : "/login-student");
+
 
       }
     } catch (error) {
