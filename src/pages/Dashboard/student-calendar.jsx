@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { 
   Home, 
   Book, 
@@ -13,214 +12,609 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  X,
   Clock,
   MapPin,
-  Users,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const StudentCalendar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState("month"); // "month", "week", "day"
+  const [viewMode, setViewMode] = useState("week"); // "month", "week", "day"
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    type: "class",
+    date: new Date(),
+    startTime: "09:00",
+    endTime: "10:00",
+    location: "",
+    description: "",
+    color: "#3b82f6" // Default blue
+  });
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Event types with corresponding colors
+  const eventTypes = [
+    { name: "Class", value: "class", color: "#3b82f6" }, // Blue
+    { name: "Assignment", value: "assignment", color: "#f97316" }, // Orange
+    { name: "Exam", value: "exam", color: "#ef4444" }, // Red
+    { name: "Viva", value: "viva", color: "#8b5cf6" }, // Purple
+    { name: "Practical", value: "practical", color: "#10b981" }, // Green
+    { name: "Study Group", value: "study", color: "#6366f1" }, // Indigo
+    { name: "Other", value: "other", color: "#6b7280" } // Gray
+  ];
+
+  // Sample events data (would normally come from API)
+  const [events, setEvents] = useState([
+    {
+      id: 1,
+      title: "Data Structures Lecture",
+      type: "class",
+      date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 10, 0),
+      startTime: "10:00",
+      endTime: "11:30",
+      location: "Building A, Room 301",
+      description: "Chapter 7: Binary Trees",
+      color: "#3b82f6"
+    },
+    {
+      id: 2,
+      title: "Algorithm Analysis Assignment Due",
+      type: "assignment",
+      date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 1, 23, 59),
+      startTime: "23:59",
+      endTime: "23:59",
+      location: "Online Submission",
+      description: "Complete problems 3.1-3.8 in the textbook",
+      color: "#f97316"
+    },
+    {
+      id: 3,
+      title: "DBMS Midterm Exam",
+      type: "exam",
+      date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 3, 14, 0),
+      startTime: "14:00",
+      endTime: "16:00",
+      location: "Examination Hall 2",
+      description: "Chapters 1-5, closed book",
+      color: "#ef4444"
+    },
+    {
+      id: 4,
+      title: "Computer Networks Project Viva",
+      type: "viva",
+      date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 2, 13, 0),
+      startTime: "13:00",
+      endTime: "14:00",
+      location: "Professor Chen's Office",
+      description: "Be prepared to demonstrate your network simulation",
+      color: "#8b5cf6"
+    },
+    {
+      id: 5,
+      title: "Digital Electronics Lab",
+      type: "practical",
+      date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 1, 9, 0),
+      startTime: "09:00",
+      endTime: "12:00",
+      location: "Engineering Lab 4",
+      description: "Logic Gate Implementation",
+      color: "#10b981"
+    },
+    {
+      id: 6,
+      title: "AI Study Group",
+      type: "study",
+      date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 1, 16, 0),
+      startTime: "16:00",
+      endTime: "18:00",
+      location: "Library, Group Study Room 3",
+      description: "Review for upcoming quiz on neural networks",
+      color: "#6366f1"
+    }
+  ]);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
   };
 
-  const currentMonth = currentDate.toLocaleString('default', { month: 'long' });
-  const currentYear = currentDate.getFullYear();
-
-  // Generate days for the current month view
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-    
-    const days = [];
-    
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push({ day: null, date: null });
-    }
-    
-    // Add days of the current month
-    for (let i = 1; i <= daysInMonth; i++) {
-      const date = new Date(year, month, i);
-      days.push({ 
-        day: i, 
-        date: date,
-        events: getEventsForDate(date)
-      });
-    }
-    
-    return days;
+  // Get days of the current month
+  const getDaysInMonth = (year, month) => {
+    return new Date(year, month + 1, 0).getDate();
   };
 
-  // Navigate to previous or next month
-  const navigateMonth = (direction) => {
-    const newDate = new Date(currentDate);
-    if (direction === 'prev') {
-      newDate.setMonth(newDate.getMonth() - 1);
+  // Get the first day of the month
+  const getFirstDayOfMonth = (year, month) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  // Helper to format date as YYYY-MM-DD for input fields
+  const formatDateForInput = (date) => {
+    const d = new Date(date);
+    const month = `${d.getMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getDate()}`.padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
+  };
+
+  // Navigate to previous month/week/day
+  const prevPeriod = () => {
+    if (viewMode === "month") {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    } else if (viewMode === "week") {
+      const newDate = new Date(currentDate);
+      newDate.setDate(currentDate.getDate() - 7);
+      setCurrentDate(newDate);
     } else {
-      newDate.setMonth(newDate.getMonth() + 1);
+      const newDate = new Date(currentDate);
+      newDate.setDate(currentDate.getDate() - 1);
+      setCurrentDate(newDate);
     }
-    setCurrentDate(newDate);
   };
 
-  // Sample events data
-  const events = [
-    {
-      id: 1,
-      title: "Introduction to Networks",
-      type: "Lecture",
-      date: new Date(2025, 3, 28, 9, 0), // April 28, 2025, 9:00 AM
-      endDate: new Date(2025, 3, 28, 10, 30),
-      location: "Room 203, Engineering Building",
-      instructor: "Prof. David Lee",
-      important: false,
-      description: "Lecture on network topologies and protocols"
-    },
-    {
-      id: 2,
-      title: "Database & Management System",
-      type: "Lecture",
-      date: new Date(2025, 3, 28, 14, 0), // April 28, 2025, 2:00 PM
-      endDate: new Date(2025, 3, 28, 15, 30),
-      location: "Room 105, Computer Science Building",
-      instructor: "Dr. Emily Torres",
-      important: false,
-      description: "Covering SQL queries and database normalization"
-    },
-    {
-      id: 3,
-      title: "Automata 101",
-      type: "Lab",
-      date: new Date(2025, 3, 29, 11, 0), // April 29, 2025, 11:00 AM
-      endDate: new Date(2025, 3, 29, 13, 0),
-      location: "Lab 301, Computer Science Building",
-      instructor: "Dr. Sarah Johnson",
-      important: false,
-      description: "Practical session on implementing finite automata"
-    },
-    {
-      id: 4,
-      title: "Advanced Algorithms",
-      type: "Quiz",
-      date: new Date(2025, 3, 30, 10, 0), // April 30, 2025, 10:00 AM
-      endDate: new Date(2025, 3, 30, 11, 0),
-      location: "Room 204, Engineering Building",
-      instructor: "Prof. Robert Chen",
-      important: true,
-      description: "Quiz on dynamic programming"
-    },
-    {
-      id: 5,
-      title: "Image Processing",
-      type: "Lecture",
-      date: new Date(2025, 4, 1, 13, 0), // May 1, 2025, 1:00 PM
-      endDate: new Date(2025, 4, 1, 14, 30),
-      location: "Room 207, Science Building",
-      instructor: "Prof. Michael Wong",
-      important: false,
-      description: "Introduction to image filtering techniques"
-    },
-    {
-      id: 6,
-      title: "Research Methodology",
-      type: "Assignment Due",
-      date: new Date(2025, 4, 2, 23, 59), // May 2, 2025, 11:59 PM
-      endDate: new Date(2025, 4, 2, 23, 59),
-      location: "Online Submission",
-      instructor: "Dr. Amanda Lewis",
-      important: true,
-      description: "Final research proposal submission"
-    },
-    {
-      id: 7,
-      title: "Algorithm Study Group",
-      type: "Group Meeting",
-      date: new Date(2025, 3, 29, 18, 0), // April 29, 2025, 6:00 PM
-      endDate: new Date(2025, 3, 29, 20, 0),
-      location: "Library Conference Room 3",
-      instructor: null,
-      important: false,
-      description: "Preparation for the upcoming quiz"
+  // Navigate to next month/week/day
+  const nextPeriod = () => {
+    if (viewMode === "month") {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    } else if (viewMode === "week") {
+      const newDate = new Date(currentDate);
+      newDate.setDate(currentDate.getDate() + 7);
+      setCurrentDate(newDate);
+    } else {
+      const newDate = new Date(currentDate);
+      newDate.setDate(currentDate.getDate() + 1);
+      setCurrentDate(newDate);
     }
-  ];
-
-  // Get events for a specific date
-  const getEventsForDate = (date) => {
-    if (!date) return [];
-    
-    return events.filter(event => 
-      event.date.getDate() === date.getDate() &&
-      event.date.getMonth() === date.getMonth() &&
-      event.date.getFullYear() === date.getFullYear()
-    );
   };
 
-  // Get events for today
-  const todaysEvents = getEventsForDate(new Date());
-  
-  // Get upcoming events (next 7 days excluding today)
-  const getUpcomingEvents = () => {
-    const today = new Date();
-    const nextWeek = new Date();
-    nextWeek.setDate(today.getDate() + 7);
-    
-    return events.filter(event => {
-      const eventDate = new Date(event.date);
-      return eventDate > today && eventDate <= nextWeek;
-    }).sort((a, b) => a.date - b.date);
-  };
-  
-  const upcomingEvents = getUpcomingEvents();
-
-  // Handle date selection
-  const handleDateClick = (date) => {
-    if (date) {
-      setSelectedDate(date);
-    }
+  // Navigate to today
+  const goToToday = () => {
+    setCurrentDate(new Date());
+    setSelectedDate(new Date());
   };
 
   // Check if a date is today
   const isToday = (date) => {
-    if (!date) return false;
     const today = new Date();
     return date.getDate() === today.getDate() &&
       date.getMonth() === today.getMonth() &&
       date.getFullYear() === today.getFullYear();
   };
 
-  // Check if a date is selected
-  const isSelected = (date) => {
-    if (!date || !selectedDate) return false;
+  // Check if a date is the selected date
+  const isSelectedDate = (date) => {
     return date.getDate() === selectedDate.getDate() &&
       date.getMonth() === selectedDate.getMonth() &&
       date.getFullYear() === selectedDate.getFullYear();
   };
 
-  // Format time (e.g., "9:00 AM")
-  const formatTime = (date) => {
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  // Handle form input changes for new events
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === "type") {
+      const selectedType = eventTypes.find(type => type.value === value);
+      setNewEvent({
+        ...newEvent,
+        [name]: value,
+        color: selectedType.color
+      });
+    } else {
+      setNewEvent({
+        ...newEvent,
+        [name]: value
+      });
+    }
   };
 
-  // Format date (e.g., "Monday, April 28")
-  const formatDate = (date) => {
-    return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  // Handle date selection
+  const handleDateClick = (date) => {
+    setSelectedDate(date);
+    if (viewMode === "month") {
+      setViewMode("day");
+      setCurrentDate(date);
+    }
   };
 
-  // Days of the week
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Add a new event
+  const handleAddEvent = (e) => {
+    e.preventDefault();
+    
+    const eventDate = new Date(newEvent.date);
+    
+    const newEventObject = {
+      id: events.length + 1,
+      ...newEvent,
+      date: eventDate
+    };
+    
+    setEvents([...events, newEventObject]);
+    setShowEventModal(false);
+    
+    // Reset form
+    setNewEvent({
+      title: "",
+      type: "class",
+      date: new Date(),
+      startTime: "09:00",
+      endTime: "10:00",
+      location: "",
+      description: "",
+      color: "#3b82f6"
+    });
+  };
 
-  // Selected date events
-  const selectedDateEvents = getEventsForDate(selectedDate);
+  // Get events for a specific date
+  const getEventsForDate = (date) => {
+    return events.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate.getDate() === date.getDate() &&
+        eventDate.getMonth() === date.getMonth() &&
+        eventDate.getFullYear() === date.getFullYear();
+    });
+  };
 
-  const days = getDaysInMonth(currentDate);
+  // Get week dates (Sunday to Saturday)
+  const getWeekDates = () => {
+    const dates = [];
+    const firstDayOfWeek = new Date(currentDate);
+    const day = currentDate.getDay(); // 0 for Sunday, 1 for Monday, etc.
+    firstDayOfWeek.setDate(currentDate.getDate() - day);
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(firstDayOfWeek);
+      date.setDate(firstDayOfWeek.getDate() + i);
+      dates.push(date);
+    }
+    
+    return dates;
+  };
+
+  // Format time (24h to 12h format)
+  const formatTime = (time) => {
+    const [hours, minutes] = time.split(':');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const formattedHours = hours % 12 || 12;
+    return `${formattedHours}:${minutes} ${ampm}`;
+  };
+
+  // Month view renderer
+  const renderMonthView = () => {
+    const daysInMonth = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth());
+    const firstDayOfMonth = getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth());
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    // Previous month's days
+    const prevMonthDays = [];
+    const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
+    const prevMonthDaysCount = prevMonth.getDate();
+    
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      const day = prevMonthDaysCount - firstDayOfMonth + i + 1;
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, day);
+      prevMonthDays.push({ date, day });
+    }
+    
+    // Current month's days
+    const currentMonthDays = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+      currentMonthDays.push({ date, day: i });
+    }
+    
+    // Next month's days
+    const nextMonthDays = [];
+    const totalCells = 42; // 6 rows x 7 columns
+    const remainingCells = totalCells - (prevMonthDays.length + currentMonthDays.length);
+    
+    for (let i = 1; i <= remainingCells; i++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, i);
+      nextMonthDays.push({ date, day: i });
+    }
+    
+    // Combine all days
+    const allDays = [...prevMonthDays, ...currentMonthDays, ...nextMonthDays];
+    
+    return (
+      <div className="bg-white rounded-lg shadow">
+        <div className="grid grid-cols-7 gap-0">
+          {dayNames.map((day, index) => (
+            <div key={index} className="p-2 text-center font-medium text-gray-500 border-b">
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-0">
+          {allDays.map(({ date, day }, index) => {
+            const dateEvents = getEventsForDate(date);
+            const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+            
+            return (
+              <div 
+                key={index} 
+                className={`h-28 p-1 border hover:bg-blue-50 cursor-pointer transition-colors
+                  ${isCurrentMonth ? '' : 'bg-gray-50 text-gray-400'}
+                  ${isToday(date) ? 'bg-blue-50' : ''}
+                  ${isSelectedDate(date) ? 'border-blue-500 border-2' : ''}`}
+                onClick={() => handleDateClick(date)}
+              >
+                <div className="flex justify-between items-center p-1">
+                  <span className={`text-sm font-medium ${isToday(date) ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}`}>
+                    {day}
+                  </span>
+                  {dateEvents.length > 0 && (
+                    <span className="text-xs font-medium text-blue-600 bg-blue-100 rounded-full px-1.5">
+                      {dateEvents.length}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 space-y-1 max-h-20 overflow-hidden">
+                  {dateEvents.slice(0, 3).map((event, idx) => (
+                    <div 
+                      key={idx} 
+                      className="text-xs rounded px-1 py-0.5 truncate"
+                      style={{ backgroundColor: `${event.color}20`, color: event.color }}
+                    >
+                      {event.startTime} - {event.title}
+                    </div>
+                  ))}
+                  {dateEvents.length > 3 && (
+                    <div className="text-xs text-gray-500 pl-1">
+                      +{dateEvents.length - 3} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Week view renderer
+  const renderWeekView = () => {
+    const weekDates = getWeekDates();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 9 PM
+    
+    return (
+      <div className="bg-white rounded-lg shadow overflow-auto">
+        <div className="flex min-w-max">
+          {/* Time column */}
+          <div className="w-20 flex-shrink-0">
+            <div className="h-16 border-b border-r"></div> {/* Empty corner cell */}
+            {hours.map((hour) => (
+              <div key={hour} className="h-16 border-b border-r text-xs text-gray-500 pl-2 pt-1">
+                {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+              </div>
+            ))}
+          </div>
+          
+          {/* Days columns */}
+          {weekDates.map((date, dateIndex) => {
+            const dateEvents = getEventsForDate(date);
+            
+            return (
+              <div key={dateIndex} className="flex-1 min-w-36">
+                {/* Day header */}
+                <div 
+                  className={`h-16 border-b flex flex-col items-center justify-center
+                    ${isToday(date) ? 'bg-blue-50' : ''}
+                    ${isSelectedDate(date) ? 'border-blue-500 border-b-2' : ''}`}
+                  onClick={() => handleDateClick(date)}
+                >
+                  <div className="text-sm font-medium">{dayNames[date.getDay()].substring(0, 3)}</div>
+                  <div className={`text-lg font-bold ${isToday(date) ? 'bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center' : ''}`}>
+                    {date.getDate()}
+                  </div>
+                </div>
+                
+                {/* Hour cells */}
+                {hours.map((hour) => {
+                  const hourEvents = dateEvents.filter(event => {
+                    const eventStartHour = parseInt(event.startTime.split(':')[0]);
+                    return eventStartHour === hour;
+                  });
+                  
+                  return (
+                    <div key={`${dateIndex}_${hour}`} className="h-16 border-b relative hover:bg-blue-50 cursor-pointer">
+                      {hourEvents.map((event, eventIdx) => {
+                        const startHour = parseInt(event.startTime.split(':')[0]);
+                        const startMinute = parseInt(event.startTime.split(':')[1]);
+                        const endHour = parseInt(event.endTime.split(':')[0]);
+                        const endMinute = parseInt(event.endTime.split(':')[1]);
+                        
+                        // Calculate event duration in minutes
+                        const durationHours = endHour - startHour;
+                        const durationMinutes = endMinute - startMinute;
+                        const totalDurationMinutes = durationHours * 60 + durationMinutes;
+                        
+                        // Calculate height based on duration (1 hour = 64px)
+                        const height = (totalDurationMinutes / 60) * 64;
+                        
+                        // Calculate top position based on start minute
+                        const top = (startMinute / 60) * 64;
+                        
+                        return (
+                          <div 
+                            key={eventIdx}
+                            className="absolute left-0 right-0 mx-1 overflow-hidden rounded text-xs"
+                            style={{ 
+                              top: `${top}px`, 
+                              height: `${height}px`,
+                              backgroundColor: event.color,
+                              color: 'white',
+                              zIndex: 10
+                            }}
+                          >
+                            <div className="p-1 truncate">
+                              <div className="font-bold">{event.title}</div>
+                              <div>{event.startTime} - {event.endTime}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Day view renderer
+  const renderDayView = () => {
+    const dateEvents = getEventsForDate(currentDate);
+    const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 9 PM
+    
+    return (
+      <div className="bg-white rounded-lg shadow flex flex-col lg:flex-row">
+        {/* Time and events */}
+        <div className="flex-1 overflow-auto">
+          <div className="flex min-w-max">
+            {/* Time column */}
+            <div className="w-20 flex-shrink-0">
+              {hours.map((hour) => (
+                <div key={hour} className="h-20 border-b border-r text-xs text-gray-500 pl-2 pt-1">
+                  {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                </div>
+              ))}
+            </div>
+            
+            {/* Events column */}
+            <div className="flex-1 min-w-72">
+              {hours.map((hour) => {
+                const hourEvents = dateEvents.filter(event => {
+                  const eventStartHour = parseInt(event.startTime.split(':')[0]);
+                  return eventStartHour === hour;
+                });
+                
+                return (
+                  <div key={hour} className="h-20 border-b relative hover:bg-blue-50 cursor-pointer">
+                    {hourEvents.map((event, eventIdx) => {
+                      const startHour = parseInt(event.startTime.split(':')[0]);
+                      const startMinute = parseInt(event.startTime.split(':')[1]);
+                      const endHour = parseInt(event.endTime.split(':')[0]);
+                      const endMinute = parseInt(event.endTime.split(':')[1]);
+                      
+                      // Calculate event duration in minutes
+                      const durationHours = endHour - startHour;
+                      const durationMinutes = endMinute - startMinute;
+                      const totalDurationMinutes = durationHours * 60 + durationMinutes;
+                      
+                      // Calculate height based on duration (1 hour = 80px)
+                      const height = (totalDurationMinutes / 60) * 80;
+                      
+                      // Calculate top position based on start minute
+                      const top = (startMinute / 60) * 80;
+                      
+                      return (
+                        <div 
+                          key={eventIdx}
+                          className="absolute left-0 right-0 mx-2 overflow-hidden rounded"
+                          style={{ 
+                            top: `${top}px`, 
+                            height: `${height}px`,
+                            backgroundColor: event.color,
+                            color: 'white',
+                            zIndex: 10
+                          }}
+                        >
+                          <div className="p-2 truncate">
+                            <div className="font-bold">{event.title}</div>
+                            <div className="text-sm">{formatTime(event.startTime)} - {formatTime(event.endTime)}</div>
+                            {event.location && (
+                              <div className="text-sm flex items-center mt-1">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {event.location}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        
+        {/* Events list */}
+        <div className="lg:w-80 bg-gray-50 p-4 border-l">
+          <h3 className="text-lg font-bold mb-4">
+            Events for {currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </h3>
+          
+          {dateEvents.length === 0 ? (
+            <div className="text-gray-500 text-center py-8">
+              <CalendarIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+              <p>No events scheduled for today</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {dateEvents.sort((a, b) => {
+                return a.startTime.localeCompare(b.startTime);
+              }).map((event, index) => (
+                <div 
+                  key={index} 
+                  className="bg-white p-3 rounded-lg shadow-sm border-l-4"
+                  style={{ borderLeftColor: event.color }}
+                >
+                  <div className="font-bold text-gray-800">{event.title}</div>
+                  <div className="text-sm flex items-center text-gray-600 mt-2">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                  </div>
+                  {event.location && (
+                    <div className="text-sm flex items-center text-gray-600 mt-1">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {event.location}
+                    </div>
+                  )}
+                  {event.description && (
+                    <div className="text-sm text-gray-600 mt-2 border-t pt-2">
+                      {event.description}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Get a text representation of the current view period
+  const getPeriodLabel = () => {
+    if (viewMode === "month") {
+      return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } else if (viewMode === "week") {
+      const weekDates = getWeekDates();
+      const firstDay = weekDates[0];
+      const lastDay = weekDates[6];
+      
+      if (firstDay.getMonth() === lastDay.getMonth()) {
+        return `${firstDay.toLocaleDateString('en-US', { month: 'long' })} ${firstDay.getDate()} - ${lastDay.getDate()}, ${firstDay.getFullYear()}`;
+      } else if (firstDay.getFullYear() === lastDay.getFullYear()) {
+        return `${firstDay.toLocaleDateString('en-US', { month: 'short' })} ${firstDay.getDate()} - ${lastDay.toLocaleDateString('en-US', { month: 'short' })} ${lastDay.getDate()}, ${firstDay.getFullYear()}`;
+      } else {
+        return `${firstDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${lastDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      }
+    } else {
+      return currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -231,12 +625,12 @@ const StudentCalendar = () => {
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className={`flex items-center ${collapsed ? "justify-center w-full" : ""}`}>
+        <div className={`flex items-center ${collapsed ? "justify-center w-full" : ""}`}>
             {!collapsed && (
-              <img src="/placeholder.svg" alt="HearLink Logo" className="h-8 w-auto mr-3" />
+              <img src="hearlink_new/images/Hearlink.png" alt="HearLink Logo" className="h-8 w-auto mr-3" />
             )}
             {!collapsed && <span className="text-xl font-bold text-hearlink-900">HearLink</span>}
-            {collapsed && <img src="/placeholder.svg" alt="HearLink" className="h-8 w-auto" />}
+            {collapsed && <img src="hearlink_new\images\Hearlink.png" alt="HearLink" className="h-8 w-auto" />}
           </div>
           <button
             onClick={toggleSidebar}
@@ -263,7 +657,7 @@ const StudentCalendar = () => {
             <li>
               <Link
                 to="/student-dashboard"
-                className="flex items-center p-2 rounded-lg hover:bg-hearlink-50 text-gray-600"
+                className="flex items-center p-2 rounded-lg hover:bg-blue-50 text-gray-600"
               >
                 <Home className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
                 {!collapsed && <span>Dashboard</span>}
@@ -272,7 +666,7 @@ const StudentCalendar = () => {
             <li>
               <Link
                 to="/student-courses"
-                className="flex items-center p-2 rounded-lg hover:bg-hearlink-50 text-gray-600"
+                className="flex items-center p-2 rounded-lg hover:bg-blue-50 text-gray-600"
               >
                 <Book className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
                 {!collapsed && <span>My Courses</span>}
@@ -281,7 +675,7 @@ const StudentCalendar = () => {
             <li>
               <Link
                 to="/student-calendar"
-                className="flex items-center p-2 rounded-lg hover:bg-hearlink-50 text-hearlink-900 bg-hearlink-50"
+                className="flex items-center p-2 rounded-lg hover:bg-blue-50 text-blue-900 bg-blue-50"
               >
                 <CalendarIcon className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
                 {!collapsed && <span>Calendar</span>}
@@ -290,7 +684,7 @@ const StudentCalendar = () => {
             <li>
               <Link
                 to="/speech-to-text"
-                className="flex items-center p-2 rounded-lg hover:bg-hearlink-50 text-gray-600"
+                className="flex items-center p-2 rounded-lg hover:bg-blue-50 text-gray-600"
               >
                 <Headphones className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
                 {!collapsed && <span>Speech to Text</span>}
@@ -299,7 +693,7 @@ const StudentCalendar = () => {
             <li>
               <Link
                 to="/learning_materials"
-                className="flex items-center p-2 rounded-lg hover:bg-hearlink-50 text-gray-600"
+                className="flex items-center p-2 rounded-lg hover:bg-blue-50 text-gray-600"
               >
                 <FileText className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
                 {!collapsed && <span>Learning Materials</span>}
@@ -311,53 +705,58 @@ const StudentCalendar = () => {
               <li>
                 <Link
                   to="/student-settings"
-                  className="flex items-center p-2 rounded-lg hover:bg-hearlink-50 text-gray-600"
+                  className="flex items-center p-2 rounded-lg hover:bg-blue-50 text-gray-600"
                 >
                   <Settings className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
                   {!collapsed && <span>Settings</span>}
                 </Link>
-              </li>
-              <li>
-                <Link
-                  to="/login"
-                  className="flex items-center p-2 rounded-lg hover:bg-red-50 text-red-600"
-                >
-                  <LogOut className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
-                  {!collapsed && <span>Logout</span>}
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white shadow-sm flex justify-between items-center py-4 px-6">
-  <div className="flex items-center">
-    <button
-      onClick={toggleSidebar}
-      className={`p-1 rounded-full hover:bg-gray-200 ${!collapsed ? "hidden" : ""}`}
-    >
-      <ChevronRight className="h-5 w-5" />
-    </button>
-    <h1 className="text-xl font-semibold text-gray-800 ml-2">My Calendar</h1>
-  </div>
-  <div className="flex items-center space-x-4">
-    <div className="relative">
-      <Search className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-      <input
-        type="text"
-        placeholder="Search..."
-        className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-hearlink-500 focus:border-transparent"
-      />
-    </div>
-    <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full">
-      <Bell className="h-5 w-5" />
-      <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-    </button>
-    <div className="ml-4 flex items-center">
+                              </li>
+                              <li>
+                                              <Link
+                                                to="/login"
+                                                className="flex items-center p-2 rounded-lg hover:bg-red-50 text-red-600"
+                                              >
+                                                <LogOut className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
+                                                {!collapsed && <span>Logout</span>}
+                                              </Link>
+                                            </li>
+                            </ul>
+                          </div>
+                        </nav>
+                      </div>
+                
+                      {/* Main Content */}
+                      <div className="flex-1 overflow-auto">
+                        {/* Top Navigation */}
+                        <header className="bg-white shadow-sm">
+                          <div className="flex justify-between items-center px-6 py-3">
+                            <div className="flex items-center">
+                              {collapsed && (
+                                <button
+                                  onClick={toggleSidebar}
+                                  className="p-1 rounded-full hover:bg-gray-200 mr-4"
+                                >
+                                  <ChevronRight className="h-6 w-6" />
+                                </button>
+                              )}
+                              <h1 className="text-xl font-bold text-gray-800">Calendar</h1>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <div className="relative">
+                                <div className="flex items-center rounded-lg bg-gray-100 px-3 py-2">
+                                  <Search className="h-4 w-4 text-gray-500 mr-2" />
+                                  <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    className="bg-transparent border-none focus:outline-none text-sm"
+                                  />
+                                </div>
+                              </div>
+                              <button className="p-2 rounded-full hover:bg-gray-100 relative">
+                                <Bell className="h-5 w-5 text-gray-600" />
+                                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                              </button>
+                              <div className="ml-4 flex items-center">
               <img
                 src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80"
                 alt="User Avatar"
@@ -368,269 +767,235 @@ const StudentCalendar = () => {
                 <p className="text-xs text-gray-500">Computer Science Student</p>
               </div>
             </div>
-  </div>
-</header>
-
-{/* Calendar Content */}
-<main className="flex-1 overflow-auto bg-gray-100 p-6">
-  <div className="bg-white rounded-lg shadow-sm mb-6">
-    <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-      <div className="flex space-x-2">
-        <button 
-          onClick={() => setViewMode("month")} 
-          className={`px-3 py-1 rounded-md ${viewMode === "month" ? "bg-hearlink-100 text-hearlink-800" : "bg-gray-100 text-gray-700"}`}
-        >
-          Month
-        </button>
-        <button 
-          onClick={() => setViewMode("week")} 
-          className={`px-3 py-1 rounded-md ${viewMode === "week" ? "bg-hearlink-100 text-hearlink-800" : "bg-gray-100 text-gray-700"}`}
-        >
-          Week
-        </button>
-        <button 
-          onClick={() => setViewMode("day")} 
-          className={`px-3 py-1 rounded-md ${viewMode === "day" ? "bg-hearlink-100 text-hearlink-800" : "bg-gray-100 text-gray-700"}`}
-        >
-          Day
-        </button>
-      </div>
-      <div className="flex items-center space-x-4">
-        <button 
-          onClick={() => navigateMonth('prev')} 
-          className="p-1 rounded-full hover:bg-gray-100"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <h2 className="text-lg font-medium">{currentMonth} {currentYear}</h2>
-        <button 
-          onClick={() => navigateMonth('next')} 
-          className="p-1 rounded-full hover:bg-gray-100"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-      <button className="flex items-center px-3 py-1 bg-hearlink-500 text-white rounded-md hover:bg-hearlink-600">
-        <Plus className="h-4 w-4 mr-1" />
-        Add Event
-      </button>
-    </div>
-
-    <div className="p-4">
-      {viewMode === "month" && (
-        <div className="grid grid-cols-7 gap-1">
-          {weekdays.map((day, index) => (
-            <div key={index} className="text-center text-sm font-medium text-gray-600 py-2">
-              {day}
-            </div>
-          ))}
-          
-          {days.map((day, index) => (
-            <div 
-              key={index} 
-              className={`min-h-24 p-1 border border-gray-100 ${
-                isToday(day.date) ? "bg-hearlink-50" : ""
-              } ${
-                isSelected(day.date) ? "ring-2 ring-hearlink-500" : ""
-              } ${
-                day.day ? "hover:bg-gray-50 cursor-pointer" : "bg-gray-50"
-              }`}
-              onClick={() => day.day && handleDateClick(day.date)}
-            >
-              {day.day && (
-                <>
-                  <div className="text-right mb-1">
-                    <span className={`text-sm inline-block rounded-full w-6 h-6 text-center leading-6 ${
-                      isToday(day.date) ? "bg-hearlink-500 text-white" : "text-gray-700"
-                    }`}>
-                      {day.day}
-                    </span>
-                  </div>
-                  <div className="space-y-1">
-                    {day.events && day.events.slice(0, 3).map((event) => (
-                      <div 
-                        key={event.id}
-                        className={`text-xs truncate rounded px-1 py-0.5 ${
-                          event.important ? "bg-red-100 text-red-800" : 
-                          event.type === "Lecture" ? "bg-blue-100 text-blue-800" : 
-                          event.type === "Lab" ? "bg-green-100 text-green-800" : 
-                          event.type === "Quiz" ? "bg-purple-100 text-purple-800" : 
-                          "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {formatTime(event.date)} {event.title}
+                            </div>
+                          </div>
+                        </header>
+                
+                        {/* Calendar Content */}
+                        <main className="p-6">
+                          {/* Calendar Controls */}
+                          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={prevPeriod}
+                                className="p-2 rounded hover:bg-gray-100"
+                              >
+                                <ChevronLeft className="h-5 w-5 text-gray-600" />
+                              </button>
+                              <button
+                                onClick={goToToday}
+                                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium"
+                              >
+                                Today
+                              </button>
+                              <button
+                                onClick={nextPeriod}
+                                className="p-2 rounded hover:bg-gray-100"
+                              >
+                                <ChevronRight className="h-5 w-5 text-gray-600" />
+                              </button>
+                              <h2 className="text-lg font-semibold text-gray-800 ml-2">
+                                {getPeriodLabel()}
+                              </h2>
+                            </div>
+                            
+                            <div className="flex items-center space-x-3">
+                              <div className="relative">
+                                <button 
+                                  className="flex items-center px-3 py-1.5 bg-white border rounded-lg shadow-sm hover:bg-gray-50"
+                                  onClick={() => setShowDropdown(!showDropdown)}
+                                >
+                                  <span className="text-sm font-medium mr-1">{viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}</span>
+                                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                                </button>
+                                
+                                {showDropdown && (
+                                  <div className="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 w-32">
+                                    <button 
+                                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${viewMode === 'month' ? 'font-bold text-blue-600' : ''}`}
+                                      onClick={() => {
+                                        setViewMode('month');
+                                        setShowDropdown(false);
+                                      }}
+                                    >
+                                      Month
+                                    </button>
+                                    <button 
+                                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${viewMode === 'week' ? 'font-bold text-blue-600' : ''}`}
+                                      onClick={() => {
+                                        setViewMode('week');
+                                        setShowDropdown(false);
+                                      }}
+                                    >
+                                      Week
+                                    </button>
+                                    <button 
+                                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${viewMode === 'day' ? 'font-bold text-blue-600' : ''}`}
+                                      onClick={() => {
+                                        setViewMode('day');
+                                        setShowDropdown(false);
+                                      }}
+                                    >
+                                      Day
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <Button 
+                                onClick={() => setShowEventModal(true)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center"
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                <span>Add Event</span>
+                              </Button>
+                            </div>
+                          </div>
+                
+                          {/* Calendar Views */}
+                          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                            {viewMode === "month" && renderMonthView()}
+                            {viewMode === "week" && renderWeekView()}
+                            {viewMode === "day" && renderDayView()}
+                          </div>
+                        </main>
                       </div>
-                    ))}
-                    {day.events && day.events.length > 3 && (
-                      <div className="text-xs text-gray-500 pl-1">
-                        +{day.events.length - 3} more
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    {/* Today's Events */}
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium">Today's Events</h3>
-        <p className="text-sm text-gray-500">{formatDate(new Date())}</p>
-      </div>
-      <div className="p-4">
-        {todaysEvents.length > 0 ? (
-          <div className="space-y-4">
-            {todaysEvents.map(event => (
-              <div key={event.id} className="flex">
-                <div className="mr-4">
-                  <div className="text-sm font-medium">{formatTime(event.date)}</div>
-                  <div className="text-sm text-gray-500">{formatTime(event.endDate)}</div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${
-                      event.important ? "bg-red-500" : 
-                      event.type === "Lecture" ? "bg-blue-500" : 
-                      event.type === "Lab" ? "bg-green-500" : 
-                      event.type === "Quiz" ? "bg-purple-500" : 
-                      "bg-gray-500"
-                    }`}></div>
-                    <h4 className="text-sm font-medium">{event.title}</h4>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">{event.type}</div>
-                  <div className="flex items-center text-xs text-gray-500 mt-1">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    {event.location}
-                  </div>
-                  {event.instructor && (
-                    <div className="flex items-center text-xs text-gray-500 mt-1">
-                      <Users className="h-3 w-3 mr-1" />
-                      {event.instructor}
+                
+                      {/* Add Event Modal */}
+                      {showEventModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                            <div className="flex justify-between items-center mb-4">
+                              <h3 className="text-lg font-bold">Add New Event</h3>
+                              <button 
+                                onClick={() => setShowEventModal(false)}
+                                className="p-1 rounded-full hover:bg-gray-100"
+                              >
+                                <X className="h-5 w-5 text-gray-500" />
+                              </button>
+                            </div>
+                            
+                            <form onSubmit={handleAddEvent}>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Event Title
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="title"
+                                    value={newEvent.title}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Enter event title"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Event Type
+                                  </label>
+                                  <select
+                                    name="type"
+                                    value={newEvent.type}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    {eventTypes.map((type) => (
+                                      <option key={type.value} value={type.value}>
+                                        {type.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Date
+                                  </label>
+                                  <input
+                                    type="date"
+                                    name="date"
+                                    value={formatDateForInput(newEvent.date)}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                                
+                                <div className="flex space-x-4">
+                                  <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                      Start Time
+                                    </label>
+                                    <input
+                                      type="time"
+                                      name="startTime"
+                                      value={newEvent.startTime}
+                                      onChange={handleInputChange}
+                                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                      End Time
+                                    </label>
+                                    <input
+                                      type="time"
+                                      name="endTime"
+                                      value={newEvent.endTime}
+                                      onChange={handleInputChange}
+                                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Location
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="location"
+                                    value={newEvent.location}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Enter location (optional)"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Description
+                                  </label>
+                                  <textarea
+                                    name="description"
+                                    value={newEvent.description}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
+                                    placeholder="Enter description (optional)"
+                                  />
+                                </div>
+                                
+                                <div className="flex justify-end space-x-3 pt-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowEventModal(false)}
+                                    className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <Button type="submit">
+                                    Create Event
+                                  </Button>
+                                </div>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <div className="flex justify-center mb-2">
-              <Clock className="h-12 w-12 text-gray-300" />
-            </div>
-            <p className="text-gray-500">No events scheduled for today</p>
-          </div>
-        )}
-      </div>
-    </div>
-
-    {/* Selected Date Events */}
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium">Selected Date</h3>
-        <p className="text-sm text-gray-500">{formatDate(selectedDate)}</p>
-      </div>
-      <div className="p-4">
-        {selectedDateEvents.length > 0 ? (
-          <div className="space-y-4">
-            {selectedDateEvents.map(event => (
-              <div key={event.id} className="border-l-4 pl-3 py-1 border-hearlink-500">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-medium">{event.title}</h4>
-                  {event.important && (
-                    <div className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full flex items-center">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      Important
-                    </div>
-                  )}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">{event.type}</div>
-                <div className="flex items-center text-sm text-gray-500 mt-1">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {formatTime(event.date)} - {formatTime(event.endDate)}
-                </div>
-                <div className="flex items-center text-sm text-gray-500 mt-1">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {event.location}
-                </div>
-                <p className="text-sm text-gray-600 mt-2">{event.description}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <div className="flex justify-center mb-2">
-              <CalendarIcon className="h-12 w-12 text-gray-300" />
-            </div>
-            <p className="text-gray-500">No events for selected date</p>
-          </div>
-        )}
-      </div>
-    </div>
-
-    {/* Upcoming Events */}
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium">Upcoming Events</h3>
-        <p className="text-sm text-gray-500">Next 7 days</p>
-      </div>
-      <div className="p-4">
-        {upcomingEvents.length > 0 ? (
-          <div className="space-y-3">
-            {upcomingEvents.map(event => (
-              <div key={event.id} className="flex items-center py-2 border-b border-gray-100 last:border-0">
-                <div className="flex-shrink-0 w-12 h-12 bg-hearlink-100 rounded-lg flex flex-col items-center justify-center mr-3">
-                  <span className="text-xs font-medium text-hearlink-800">
-                    {event.date.toLocaleString('default', { month: 'short' })}
-                  </span>
-                  <span className="text-lg font-bold text-hearlink-800">
-                    {event.date.getDate()}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <h4 className="text-sm font-medium">{event.title}</h4>
-                    {event.important && (
-                      <AlertCircle className="h-3 w-3 ml-1 text-red-500" />
-                    )}
-                  </div>
-                  <div className="flex items-center text-xs text-gray-500 mt-1">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {formatTime(event.date)}
-                  </div>
-                </div>
-                <div className={`text-xs px-2 py-1 rounded-full ${
-                  event.type === "Lecture" ? "bg-blue-100 text-blue-800" : 
-                  event.type === "Lab" ? "bg-green-100 text-green-800" : 
-                  event.type === "Quiz" ? "bg-purple-100 text-purple-800" :
-                  event.type === "Assignment Due" ? "bg-yellow-100 text-yellow-800" :
-                  "bg-gray-100 text-gray-800"
-                }`}>
-                  {event.type}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <div className="flex justify-center mb-2">
-              <CalendarIcon className="h-12 w-12 text-gray-300" />
-            </div>
-            <p className="text-gray-500">No upcoming events</p>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-</main>
-      </div>
-    </div>
-  );
-};
-
-export default StudentCalendar;
+                  );
+                };
+                
+                export default StudentCalendar;
