@@ -31,12 +31,13 @@ const LoginForm = ({ userType }: LoginFormProps) => {
       });
 
       const data = await response.json();
-
+      console.log("Parsed login data:", data);
       if (!response.ok) {
         alert(data.error || "Login failed");
       } else {
         // Store the username in localStorage
         localStorage.setItem("username", data.username);
+        localStorage.setItem("student_id", data.student_id);
 
         // Redirect user to their dashboard based on userType
         const dashboardPath = userType === "student" ? "/student-dashboard" : "/teacher-dashboard";
