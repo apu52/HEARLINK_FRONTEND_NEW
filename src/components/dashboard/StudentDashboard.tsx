@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Home, 
@@ -40,6 +40,19 @@ const StudentDashboard = () => {
     { id: 1, title: "Topology", course: "Computer organisation", due: "Tomorrow", status: "In Progress" },
     { id: 2, title: "Striver 75 days DAA Sheet", course: "DAA", due: "In 3 days", status: "Not Started" },
   ];
+
+  const [username, setUsername] = useState<string | null>("");
+
+
+
+  useEffect(() => {
+    // Get the username from localStorage
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
+
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -189,16 +202,24 @@ const StudentDashboard = () => {
               <span className="absolute top-1 right-1 bg-red-500 rounded-full w-2 h-2"></span>
             </button>
             <div className="ml-4 flex items-center">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80"
-                alt="User Avatar"
-                className="h-8 w-8 rounded-full object-cover"
-              />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Michael Rodriguez</p>
-                <p className="text-xs text-gray-500">Computer Science Student</p>
+              {/* Circle with initials */}
+              <div className="h-10 w-10 flex items-center justify-center bg-zinc-700 text-white rounded-full">
+                {/* Display the first letter of the username */}
+                <span className="text-lg font-semibold">
+      {username ? username.charAt(0).toUpperCase() : "?"}
+    </span>
+              </div>
+
+              <div className="ml-4">
+                {/* "Welcome Back" with a distinct color */}
+                <p className="text-sm text-zinc-600">Welcome Back</p>
+
+                {/* Username with a stronger color for emphasis */}
+                <p className="text-sm  font-medium text-black italic "  >{username ? username : "Guest"}</p>
               </div>
             </div>
+
+
           </div>
         </header>
 
@@ -210,7 +231,7 @@ const StudentDashboard = () => {
           <div className="bg-gradient-to-r from-hearlink-600 to-hearlink-700 rounded-lg p-6 text-white mb-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div>
-                <h2 className="text-xl font-semibold mb-2">Welcome back, Michael!</h2>
+                <h2 className="text-xl font-semibold mb-2">Welcome back, {username}</h2>
                 <p className="mb-4">You have 2 classes scheduled for today and 2 pending assignments.</p>
                 <Button className="bg-white text-hearlink-600 hover:bg-gray-100">
                   View Assignments
