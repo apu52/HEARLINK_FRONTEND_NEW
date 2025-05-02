@@ -27,7 +27,7 @@ const AuthLayout = ({ children, title, subtitle, type, userType }: AuthLayoutPro
         <div className="w-full max-w-md">
           <Link to={homePath} className="inline-block mb-8">
             <div className="flex items-center">
-              <img src="/placeholder.svg" alt="HearLink Logo" className="h-10 w-auto" />
+              <img src="images\Hearlink.png" alt="HearLink Logo" className="h-10 w-auto" />
               <span className="ml-2 text-2xl font-bold text-hearlink-900">HearLink</span>
             </div>
           </Link>
