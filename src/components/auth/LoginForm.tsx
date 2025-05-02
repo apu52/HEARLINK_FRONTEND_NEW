@@ -8,7 +8,7 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ userType }: LoginFormProps) => {
-  const [username, setUsername] = useState("");  // Only username
+  const [username, setUsername] = useState(""); // Only username
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +18,15 @@ const LoginForm = ({ userType }: LoginFormProps) => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Hardcoded teacher login logic
+    if (userType === "teacher" && username === "teacher" && password === "teacher") {
+      // Redirect directly to teacher dashboard
+      navigate("/teacher-dashboard");
+      setIsLoading(false);
+      return;
+    }
+
+    // For student login, proceed with API call
     try {
       const response = await fetch("http://127.0.0.1:5006/api/login", {
         method: "POST",
