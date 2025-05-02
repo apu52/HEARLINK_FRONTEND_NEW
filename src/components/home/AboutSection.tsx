@@ -72,7 +72,7 @@ const AboutSection = () => {
           <div className="order-1 lg:order-2 relative">
             <div className="relative z-10">
               <img 
-                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80" 
+                src="images\SAP-110.jpeg" 
                 alt="Team collaboration" 
                 className="rounded-lg shadow-xl object-cover h-full"
               />
