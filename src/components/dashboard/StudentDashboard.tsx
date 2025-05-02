@@ -317,9 +317,9 @@ const StudentDashboard = () => {
                   <div className="bg-hearlink-50 p-3 rounded-full inline-block mb-3">
                     <Mic className="h-6 w-6 text-hearlink-600" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900">Voice Recorder</h3>
+                  <h3 className="text-lg font-medium text-gray-900">Emotion Analysis</h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Record and transcribe lectures
+                    Analyse your emotional presence in the classroom.
                   </p>
                 </div>
               </Link>
