@@ -4,7 +4,7 @@ import SectionHeading from "@/components/ui/section-heading";
 
 const images = [
   {
-    src: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80",
+    src: "images/Blee_featured.jpg",
     alt: "Students collaborating in classroom",
     title: "Collaborative Learning",
     category: "Classroom",
@@ -22,7 +22,7 @@ const images = [
     category: "Technology",
   },
   {
-    src: "https://images.unsplash.com/photo-1581078426770-6d336e5de7bf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
+    src: "images/koshish3.jpg",
     alt: "Student with headphones studying",
     title: "Audio Learning",
     category: "Accessibility",
