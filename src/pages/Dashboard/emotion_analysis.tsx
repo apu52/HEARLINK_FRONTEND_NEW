@@ -5,7 +5,7 @@ import { LogOut } from "lucide-react"; // Assuming you are using Lucide icons
 
 export default function EmotionAnalysis() {
   // Base URL configuration
-  const BASE_URL = 'https://7c44-150-242-149-133.ngrok-free.app';
+  const BASE_URL = 'http://127.0.0.1:5006';
 
 
 const navigate = useNavigate();
@@ -189,6 +189,7 @@ const handleLogout = () => {
       // Create FormData object and append the video file
       const formData = new FormData();
       formData.append('video', blob, filename);
+      formData.append('student_id',localStorage.getItem("student_id"));
 
       // Send to the backend API
       const response = await fetch(`${BASE_URL}/api/analyze-emotion`, {
