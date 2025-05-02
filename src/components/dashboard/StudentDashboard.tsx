@@ -44,7 +44,7 @@ const StudentDashboard = () => {
   const [username, setUsername] = useState<string | null>("");
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:5006/api/logout", {
+      const response = await fetch("http://216.48.190.237:5006/api/logout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,6 +138,15 @@ const StudentDashboard = () => {
                 >
                   <Calendar className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
                   {!collapsed && <span>Calendar</span>}
+                </Link>
+              </li>
+              <li>
+                <Link
+                    to="/emotion_analysis"
+                    className="flex items-center p-2 rounded-lg hover:bg-hearlink-50 text-gray-600"
+                >
+                  <MessageSquare className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
+                  {!collapsed && <span>Emotion Analysis</span>}
                 </Link>
               </li>
               <li>

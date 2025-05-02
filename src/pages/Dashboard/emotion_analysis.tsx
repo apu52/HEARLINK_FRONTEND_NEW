@@ -5,7 +5,7 @@ import { LogOut } from "lucide-react"; // Assuming you are using Lucide icons
 
 export default function EmotionAnalysis() {
   // Base URL configuration
-  const BASE_URL = 'http://127.0.0.1:5006';
+  const BASE_URL = 'http://216.48.190.237:5006';
 
 
 const navigate = useNavigate();

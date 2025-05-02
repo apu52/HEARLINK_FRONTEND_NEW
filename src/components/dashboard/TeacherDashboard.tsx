@@ -126,15 +126,7 @@ const TeacherDashboard = () => {
                 {!collapsed && <span>Analytics</span>}
               </Link>
             </li>
-            <li>
-              <Link
-                to="/emotion_analysis"
-                className="flex items-center p-2 rounded-lg hover:bg-hearlink-50 text-gray-600"
-              >
-                <MessageSquare className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
-                {!collapsed && <span>Emotion Analysis</span>}
-              </Link>
-            </li>
+
           </ul>
           <div className="border-t border-gray-200 mt-6 pt-6">
             <ul className="space-y-2">

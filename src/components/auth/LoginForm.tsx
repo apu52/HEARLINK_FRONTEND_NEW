@@ -28,7 +28,7 @@ const LoginForm = ({ userType }: LoginFormProps) => {
 
     // For student login, proceed with API call
     try {
-      const response = await fetch("http://127.0.0.1:5006/api/login", {
+      const response = await fetch("http://216.48.190.237:5006/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
