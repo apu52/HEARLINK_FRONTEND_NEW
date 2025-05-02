@@ -2,13 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const SpeechAssist: React.FC = () => {
   // State variables
+  const REQUEST_INTERVAL = 4000; // 10 seconds
+  const processingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [currentTranscription, setCurrentTranscription] = useState<string>("");
   const [status, setStatus] = useState<string>("Ready");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const [history, setHistory] = useState<string[]>([]);
   const [recordingOpacity, setRecordingOpacity] = useState<number>(0.5);
-  
   // Refs for audio processing
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -37,15 +38,12 @@ const SpeechAssist: React.FC = () => {
 
   // Initialize audio function
   const initializeAudio = async (): Promise<MediaStream> => {
-    // Check if we already have a valid stream
     if (audioStreamRef.current && audioStreamRef.current.active) {
       return audioStreamRef.current;
     }
 
     try {
       logStatus('Requesting microphone access...');
-
-      // Request microphone with explicit constraints
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -53,8 +51,6 @@ const SpeechAssist: React.FC = () => {
           autoGainControl: true
         }
       });
-
-      // Store the stream for later use
       audioStreamRef.current = stream;
       return stream;
     } catch (err) {
@@ -68,17 +64,12 @@ const SpeechAssist: React.FC = () => {
   const processAudioChunk = async () => {
     if (audioChunksRef.current.length === 0 || isProcessingRef.current) return;
 
-    // Set processing flag to prevent overlapping processing
     isProcessingRef.current = true;
+    const audioBlob = new Blob([...audioChunksRef.current], { type: 'audio/mp3' });
 
-    // Create audio blob from current chunks
-    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
+    // Only clear chunks after successful processing
+    const chunksToProcess = [...audioChunksRef.current];
 
-    // Reset chunks for next recording segment
-    const chunkCopy = [...audioChunksRef.current];
-    audioChunksRef.current = [];
-
-    // Don't process very small audio chunks
     if (audioBlob.size < 1000) {
       logStatus(isRecording ? 'Listening...' : 'Ready');
       isProcessingRef.current = false;
@@ -87,62 +78,53 @@ const SpeechAssist: React.FC = () => {
 
     logStatus('Processing audio...');
 
-    // Create form data
     const formData = new FormData();
     formData.append('file', audioBlob, 'recording.mp3');
     formData.append('output_language', selectedLanguage);
 
     try {
-      // Send to API endpoint
       const response = await fetch('http://127.0.0.1:5008/api/voice', {
         method: 'POST',
         body: formData
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
       const result = await response.json();
+      console.log('API Response:', result); // Debug log
 
-      // Process the results
-      if (result.translated_text && result.translated_text.trim()) {
-        // Clean up the transcription
-        let newText = result.translated_text.trim();
+      if (result.translated_text?.trim()) {
+        setCurrentTranscription(prev => {
+          const newText = result.translated_text.trim();
+          let updated = prev;
 
-        // If current transcription ends with sentence-ending punctuation or is empty,
-        // capitalize the new text
-        if (currentTranscription === "" ||
-            /[.!?]\s*$/.test(currentTranscription)) {
-          newText = newText.charAt(0).toUpperCase() + newText.slice(1);
-        }
+          // Add space if needed
+          if (updated && !/[.!?]\s*$/.test(updated) && !newText.startsWith(' ')) {
+            updated += ' ';
+          }
 
-        // Add space if needed between chunks
-        let updatedTranscription = currentTranscription;
-        if (updatedTranscription &&
-            !updatedTranscription.endsWith(" ") &&
-            !newText.startsWith(" ") &&
-            !/[.!?,;]$/.test(updatedTranscription)) {
-          updatedTranscription += " ";
-        }
+          // Capitalize if starting new sentence
+          if (!updated || /[.!?]\s*$/.test(prev)) {
+            updated += newText.charAt(0).toUpperCase() + newText.slice(1);
+          } else {
+            updated += newText;
+          }
 
-        // Append new transcription to current one
-        updatedTranscription += newText;
-        setCurrentTranscription(updatedTranscription);
+          return updated;
+        });
 
-        // Auto-scroll if overflowing
+        // Clear only the processed chunks on success
+        audioChunksRef.current = audioChunksRef.current.slice(chunksToProcess.length);
+
+        // Auto-scroll
         if (transcriptionTextRef.current) {
           transcriptionTextRef.current.scrollTop = transcriptionTextRef.current.scrollHeight;
         }
       }
-
-      // Update status when complete, but check if we're still recording
-      logStatus(isRecording ? 'Listening...' : 'Processing complete');
     } catch (error) {
       console.error('API Error:', error);
       logStatus(isRecording ? 'Error - still listening' : 'Error processing');
     } finally {
-      // Always reset the processing flag
       isProcessingRef.current = false;
     }
   };
@@ -151,21 +133,18 @@ const SpeechAssist: React.FC = () => {
   const startRecording = async () => {
     try {
       logStatus('Starting microphone...');
-
-      // Get audio stream
       const stream = await initializeAudio();
+
       if (!stream) {
         throw new Error('Could not initialize audio stream');
       }
 
       // Setup audio context
       if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
       sourceNodeRef.current = audioContextRef.current.createMediaStreamSource(stream);
-
-      // Setup analyzer for silence detection
       const analyzerNode = audioContextRef.current.createAnalyser();
       analyzerNode.fftSize = 1024;
       sourceNodeRef.current.connect(analyzerNode);
@@ -173,11 +152,9 @@ const SpeechAssist: React.FC = () => {
       const bufferLength = analyzerNode.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
 
-      // Create media recorder with appropriate options
+      // Create media recorder
       try {
-        // Try with MIME types the browser definitely supports
         let options: MediaRecorderOptions = {};
-
         if (MediaRecorder.isTypeSupported('audio/webm')) {
           options = { mimeType: 'audio/webm' };
         } else if (MediaRecorder.isTypeSupported('audio/mp3')) {
@@ -185,116 +162,86 @@ const SpeechAssist: React.FC = () => {
         } else if (MediaRecorder.isTypeSupported('audio/wav')) {
           options = { mimeType: 'audio/wav' };
         }
-
-        // Add bitrate to options
         options.audioBitsPerSecond = 128000;
 
-        // Create recorder
         mediaRecorderRef.current = new MediaRecorder(stream, options);
         console.log('MediaRecorder initialized with options:', options);
       } catch (e) {
-        // Fallback with no options
         console.warn('Error creating MediaRecorder with options, falling back:', e);
         mediaRecorderRef.current = new MediaRecorder(stream);
       }
 
       // Reset audio chunks
       audioChunksRef.current = [];
-
-      // Start time tracking for this chunk
       chunkStartTimeRef.current = Date.now();
 
-      // Event handlers for recording
+      // Setup data handler
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
-      // Start with smaller time slices
+      // Start periodic processing
+      processingIntervalRef.current = setInterval(() => {
+        if (audioChunksRef.current.length > 0 && !isProcessingRef.current) {
+          processAudioChunk();
+        }
+      }, REQUEST_INTERVAL);
+
+      // Start recording
       mediaRecorderRef.current.start(250);
       logStatus('Listening...');
 
-      // Handle recording stop
-      mediaRecorderRef.current.onstop = () => {
-        if (audioChunksRef.current.length > 0) {
-          // Use setTimeout to avoid potential recursive issues
-          setTimeout(processAudioChunk, 50);
-        }
-      };
-
-      // Set up silence detection function
+      // Silence detection
       silenceDetectorRef.current = window.setInterval(() => {
-        if (!isRecording) {
-          if (silenceDetectorRef.current) {
-            clearInterval(silenceDetectorRef.current);
-          }
-          return;
-        }
+        if (!isRecording) return;
 
         analyzerNode.getByteFrequencyData(dataArray);
-
-        // Calculate average volume level
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) {
           sum += dataArray[i];
         }
-        const average = sum / bufferLength / 255; // Normalize to 0-1
+        const average = sum / bufferLength / 255;
 
-        // Make recording indicator pulse based on audio level
+        // Visual feedback
         if (average > SILENCE_THRESHOLD) {
           setRecordingOpacity(Math.min(0.5 + average, 1));
         } else {
           setRecordingOpacity(0.5);
         }
 
-        // Only check for silence/recording timing if we're not already processing
+        // Silence detection logic
         if (!isProcessingRef.current) {
-          // Check for silence
           if (average < SILENCE_THRESHOLD) {
-            silenceCounterRef.current += 0.1; // Interval is 100ms
-
-            // If silence lasts for the threshold duration and we have minimum recording time
+            silenceCounterRef.current += 0.1;
             const recordingDuration = (Date.now() - chunkStartTimeRef.current) / 1000;
-            if (silenceCounterRef.current >= SILENCE_DURATION && recordingDuration >= MIN_RECORDING_DURATION) {
-              // Process this chunk after silence
-              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                mediaRecorderRef.current.stop();
 
-                // Restart recording after a short delay
+            if (silenceCounterRef.current >= SILENCE_DURATION && recordingDuration >= MIN_RECORDING_DURATION) {
+              if (mediaRecorderRef.current?.state === 'recording') {
+                mediaRecorderRef.current.stop();
                 setTimeout(() => {
-                  if (isRecording && mediaRecorderRef.current && mediaRecorderRef.current.state === 'inactive') {
-                    try {
-                      mediaRecorderRef.current.start(250);
-                      chunkStartTimeRef.current = Date.now();
-                    } catch (e) {
-                      console.error('Error restarting recorder after silence', e);
-                    }
+                  if (isRecording && mediaRecorderRef.current?.state === 'inactive') {
+                    mediaRecorderRef.current.start(250);
+                    chunkStartTimeRef.current = Date.now();
                   }
                 }, 300);
               }
               silenceCounterRef.current = 0;
             }
           } else {
-            // Reset silence counter when sound is detected
             silenceCounterRef.current = 0;
           }
 
-          // Force chunk processing after maximum duration
+          // Max duration check
           const recordingDuration = (Date.now() - chunkStartTimeRef.current) / 1000;
           if (recordingDuration >= MAX_RECORDING_DURATION) {
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            if (mediaRecorderRef.current?.state === 'recording') {
               mediaRecorderRef.current.stop();
-
-              // Restart recording shortly after
               setTimeout(() => {
-                if (isRecording && mediaRecorderRef.current && mediaRecorderRef.current.state === 'inactive') {
-                  try {
-                    mediaRecorderRef.current.start(250);
-                    chunkStartTimeRef.current = Date.now();
-                  } catch (e) {
-                    console.error('Error restarting recorder after max duration', e);
-                  }
+                if (isRecording && mediaRecorderRef.current?.state === 'inactive') {
+                  mediaRecorderRef.current.start(250);
+                  chunkStartTimeRef.current = Date.now();
                 }
               }, 100);
             }
@@ -312,12 +259,14 @@ const SpeechAssist: React.FC = () => {
 
   // Stop recording function
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (e) {
-        console.error('Error stopping mediaRecorder', e);
-      }
+    // Clear processing interval
+    if (processingIntervalRef.current) {
+      clearInterval(processingIntervalRef.current);
+      processingIntervalRef.current = null;
+    }
+
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
     }
 
     if (silenceDetectorRef.current) {
@@ -325,20 +274,20 @@ const SpeechAssist: React.FC = () => {
       silenceDetectorRef.current = null;
     }
 
-    // Wait for any in-flight processing to complete
+    // Process any remaining audio
     setTimeout(() => {
-      // Only add to history when recording stops and we have content
+      if (audioChunksRef.current.length > 0) {
+        processAudioChunk();
+      }
+
+      // Add to history if we have content
       if (currentTranscription.trim()) {
-        // Add final punctuation if missing
         let finalTranscription = currentTranscription;
         if (!/[.!?]$/.test(finalTranscription)) {
           finalTranscription += ".";
         }
-
-        // Add completed transcription to history
         setHistory(prev => [...prev, finalTranscription]);
 
-        // Scroll history to bottom
         if (historyListRef.current) {
           historyListRef.current.scrollTop = historyListRef.current.scrollHeight;
         }
@@ -357,7 +306,7 @@ const SpeechAssist: React.FC = () => {
       try {
         // Try to initialize audio first
         await initializeAudio();
-        
+
         setIsRecording(true);
         setCurrentTranscription(""); // Reset the transcription
         startRecording();
@@ -417,7 +366,7 @@ const SpeechAssist: React.FC = () => {
   // Try to pre-request permissions when component mounts
   useEffect(() => {
     logStatus('Initializing...');
-    
+
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
         // Stop the tracks right away - we just wanted the permission
@@ -431,6 +380,10 @@ const SpeechAssist: React.FC = () => {
 
     // Clean up resources when component unmounts
     return () => {
+      if (processingIntervalRef.current) {
+        clearInterval(processingIntervalRef.current);
+      }
+
       if (audioStreamRef.current) {
         audioStreamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -497,8 +450,8 @@ const SpeechAssist: React.FC = () => {
                 </div>
                 <div className="language-select">
                   <label htmlFor="language">Output Language</label>
-                  <select 
-                    id="language" 
+                  <select
+                    id="language"
                     value={selectedLanguage}
                     onChange={(e) => setSelectedLanguage(e.target.value)}
                   >
@@ -510,15 +463,15 @@ const SpeechAssist: React.FC = () => {
                   </select>
                 </div>
                 <div className="voice-input">
-                  <button 
-                    id="record-btn" 
+                  <button
+                    id="record-btn"
                     className={`btn btn-primary ${isRecording ? 'recording' : ''}`}
                     onClick={toggleRecording}
                   >
                     <span className="mic-icon">{isRecording ? '🛑' : '🎙️'}</span>
                     {isRecording ? ' Stop Recording' : ' Start Recording'}
                   </button>
-                  <div 
+                  <div
                     ref={recordingIndicatorRef}
                     className={`recording-indicator ${isRecording ? 'recording' : ''}`}
                     style={{ opacity: isRecording ? recordingOpacity : 0.5 }}
