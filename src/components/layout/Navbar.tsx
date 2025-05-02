@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,8 +21,45 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Handle hash navigation when the location changes
+  useEffect(() => {
+    // Check if there's a hash in the URL
+    if (location.hash) {
+      // Slight delay to ensure the DOM is ready
+      setTimeout(() => {
+        const id = location.hash.replace('#', '');
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 0);
+    }
+  }, [location]);
+
   const toggleMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  // Function to handle smooth scrolling when clicking nav items
+  const handleNavClick = (e, href) => {
+    // Only apply special handling for hash links
+    if (href.startsWith('/#')) {
+      e.preventDefault();
+      const id = href.replace('/#', '');
+      const element = document.getElementById(id);
+      
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        
+        // Close mobile menu if open
+        if (mobileMenuOpen) {
+          setMobileMenuOpen(false);
+        }
+        
+        // Update URL without full page reload
+        window.history.pushState(null, '', href);
+      }
+    }
   };
 
   const navItems = [
@@ -45,7 +82,7 @@ const Navbar = () => {
       <div className="container mx-auto flex items-center justify-between px-4 lg:px-8">
         <Link to="/" className="flex items-center">
           <img 
-            src="/placeholder.svg" 
+            src="/images/Hearlink.png" 
             alt="HearLink Logo" 
             className="h-10 w-auto" 
           />
@@ -55,13 +92,14 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-1">
           {navItems.map((item) => (
-            <Link
+            <a
               key={item.name}
-              to={item.href}
+              href={item.href}
+              onClick={(e) => handleNavClick(e, item.href)}
               className="px-4 py-2 text-hearlink-800 hover:text-hearlink-600 rounded-md transition-colors text-sm font-medium"
             >
               {item.name}
-            </Link>
+            </a>
           ))}
         </nav>
 
@@ -99,14 +137,14 @@ const Navbar = () => {
           <div className="container mx-auto px-4 py-4">
             <nav className="flex flex-col space-y-2">
               {navItems.map((item) => (
-                <Link
+                <a
                   key={item.name}
-                  to={item.href}
+                  href={item.href}
                   className="px-4 py-3 text-hearlink-800 hover:bg-hearlink-50 rounded-md transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={(e) => handleNavClick(e, item.href)}
                 >
                   {item.name}
-                </Link>
+                </a>
               ))}
               <div className="pt-4 flex flex-col space-y-3">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
