@@ -11,7 +11,7 @@ const Footer = () => {
           {/* Company Info */}
           <div>
             <div className="flex items-center mb-6">
-              <img src="/placeholder.svg" alt="HearLink Logo" className="h-10 w-auto mr-3" />
+              <img src="images\Hearlink.png" alt="HearLink Logo" className="h-10 w-auto mr-3" />
               <h3 className="text-2xl font-bold">HearLink</h3>
             </div>
             <p className="text-gray-300 mb-6">
