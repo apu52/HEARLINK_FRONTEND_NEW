@@ -141,7 +141,7 @@ const TeacherDashboard = () => {
               </li>
               <li>
                 <Link
-                  to="/login"
+                  to="/"
                   className="flex items-center p-2 rounded-lg hover:bg-red-50 text-red-600"
                 >
                   <LogOut className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
