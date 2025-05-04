@@ -485,10 +485,10 @@ const Hearlink: React.FC = () => {
           </div>
           <nav>
             <ul className="flex space-x-6">
-              <li><a href="#" className="flex items-center hover:text-blue-200"><Home className="mr-1 h-4 w-4" /> Home</a></li>
-              <li><a href="#" className="flex items-center hover:text-blue-200"><Book className="mr-1 h-4 w-4" /> Library</a></li>
-              <li><a href="#" className="flex items-center hover:text-blue-200"><GraduationCap className="mr-1 h-4 w-4" /> Learn</a></li>
-              <li><a href="#" className="flex items-center hover:text-blue-200"><User className="mr-1 h-4 w-4" /> Account</a></li>
+              <li><a href="/" className="flex items-center hover:text-blue-200"><Home className="mr-1 h-4 w-4" /> Home</a></li>
+              <li><a href="/student-calendar" className="flex items-center hover:text-blue-200"><Book className="mr-1 h-4 w-4" />Calendar</a></li>
+              <li><a href="/student-courses" className="flex items-center hover:text-blue-200"><GraduationCap className="mr-1 h-4 w-4" />Courses</a></li>
+              <li><a href="/student-dashboard" className="flex items-center hover:text-blue-200"><User className="mr-1 h-4 w-4" /> Dashboard</a></li>
             </ul>
           </nav>
         </div>
