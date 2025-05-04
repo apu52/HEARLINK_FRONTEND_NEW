@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import img1 from 'images/istockphoto-1280356530-612x612.jpg'
+import img1 from '/images/istockphoto-1280356530-612x612.jpg'
 
 const HeroSection = () => {
   return (
