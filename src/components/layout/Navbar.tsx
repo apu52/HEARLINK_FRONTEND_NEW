@@ -82,7 +82,7 @@ const Navbar = () => {
       <div className="container mx-auto flex items-center justify-between px-4 lg:px-8">
         <Link to="/" className="flex items-center">
           <img 
-            src="/images/Hearlink.png" 
+            src="images\Hearlink.png" 
             alt="HearLink Logo" 
             className="h-10 w-auto" 
           />
