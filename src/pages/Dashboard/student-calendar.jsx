@@ -683,7 +683,7 @@ const StudentCalendar = () => {
             </li>
             <li>
               <Link
-                to="/speech-to-text"
+                to="https://monumental-starlight-979bdd.netlify.app/"
                 className="flex items-center p-2 rounded-lg hover:bg-blue-50 text-gray-600"
               >
                 <Headphones className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
