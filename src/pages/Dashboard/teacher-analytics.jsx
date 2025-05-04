@@ -30,17 +30,29 @@ const TeacherAnalytics = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
-
+  const BASE_URL = 'https://ecc0-116-204-174-95.ngrok-free.app';
   const toggleSidebar = () => setCollapsed(!collapsed);
 
   useEffect(() => {
     const fetchStudents = async () => {
+      const generateHeaders = () => {
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        if (BASE_URL.includes('ngrok')) {
+          headers['ngrok-skip-browser-warning'] = 'true';
+        }
+        return headers;
+      };
+
       try {
-        const res = await axios.get("https://ecc0-116-204-174-95.ngrok-free.app/api/students/all");
+        const res = await axios.get(`${BASE_URL}/api/students/all`, {
+          headers: generateHeaders()
+        });
+
         console.log("Response Content-Type:", res.headers["content-type"]);
         console.log("API Response:", res.data);
 
-        // Ensure res.data.students is defined and is an array
         const fetchedStudents = Array.isArray(res.data.students) ? res.data.students.map((s) => {
           const pieText = s.analysis?.pie_chart_analysis;
 
@@ -88,6 +100,7 @@ const TeacherAnalytics = () => {
 
     fetchStudents();
   }, []);
+
 
 
   const extractFeedbackSections = (text) => {
