@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 interface LoginFormProps {
   userType: "student" | "teacher";
 }
-const BASE_URL = 'https://ecc0-116-204-174-95.ngrok-free.app';
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const LoginForm = ({ userType }: LoginFormProps) => {
   const [username, setUsername] = useState(""); // Only username

@@ -30,7 +30,7 @@ const TeacherAnalytics = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
-  const BASE_URL = 'https://ecc0-116-204-174-95.ngrok-free.app';
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   const toggleSidebar = () => setCollapsed(!collapsed);
 
   useEffect(() => {

@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 interface SignupFormProps {
   userType: "student" | "teacher";
 }
-
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 const SignupForm = ({ userType }: SignupFormProps) => {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -38,12 +38,19 @@ const SignupForm = ({ userType }: SignupFormProps) => {
     }
 
     setIsLoading(true);
-
+    const generateHeaders = () => {
+      const headers: Record<string, string> = {};
+      if (BASE_URL.includes('ngrok')) {
+        headers['ngrok-skip-browser-warning'] = 'true';
+      }
+      return headers;
+    };
     try {
-      const response = await fetch("https://ecc0-116-204-174-95.ngrok-free.app/api/register", {
+      const response = await fetch(`${BASE_URL}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...generateHeaders(),
         },
         body: JSON.stringify({
           username: name, // Assuming username = email

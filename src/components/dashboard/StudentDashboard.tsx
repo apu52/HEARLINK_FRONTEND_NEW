@@ -17,7 +17,7 @@ import {
   Users
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-const BASE_URL = 'https://ecc0-116-204-174-95.ngrok-free.app';
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 const StudentDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
 
