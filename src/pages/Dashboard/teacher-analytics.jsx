@@ -36,7 +36,7 @@ const TeacherAnalytics = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const res = await axios.get("http://216.48.190.237:5006/api/students/all");
+        const res = await axios.get("https://ecc0-116-204-174-95.ngrok-free.app/api/students/all");
         console.log("Response Content-Type:", res.headers["content-type"]);
         console.log("API Response:", res.data);
 

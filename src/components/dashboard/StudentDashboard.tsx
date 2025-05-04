@@ -17,7 +17,7 @@ import {
   Users
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
+const BASE_URL = 'https://ecc0-116-204-174-95.ngrok-free.app';
 const StudentDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -43,11 +43,19 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState<string | null>("");
   const handleLogout = async () => {
+    const generateHeaders = () => {
+      const headers: Record<string, string> = {};
+      if (BASE_URL.includes('ngrok')) {
+        headers['ngrok-skip-browser-warning'] = 'true';
+      }
+      return headers;
+    };
     try {
-      const response = await fetch("http://216.48.190.237:5006/api/logout", {
+      const response = await fetch(`${BASE_URL}/api/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...generateHeaders(),
         },
       });
 

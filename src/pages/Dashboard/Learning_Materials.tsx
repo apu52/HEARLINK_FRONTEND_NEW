@@ -30,7 +30,7 @@ interface ExerciseData {
 
 const Hearlink: React.FC = () => {
   // Base URL for API
-  const BASE_URL = 'http://127.0.0.1:5003';
+  const BASE_URL = 'https://ecc0-116-204-174-95.ngrok-free.app';
   
   // States
   const [videoUrl, setVideoUrl] = useState<string>('');

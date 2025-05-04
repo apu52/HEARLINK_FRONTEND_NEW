@@ -40,7 +40,7 @@ const SignupForm = ({ userType }: SignupFormProps) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://216.48.190.237:5006/api/register", {
+      const response = await fetch("https://ecc0-116-204-174-95.ngrok-free.app/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

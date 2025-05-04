@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 interface LoginFormProps {
   userType: "student" | "teacher";
 }
+const BASE_URL = 'https://ecc0-116-204-174-95.ngrok-free.app';
 
 const LoginForm = ({ userType }: LoginFormProps) => {
   const [username, setUsername] = useState(""); // Only username
@@ -17,7 +18,13 @@ const LoginForm = ({ userType }: LoginFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    const generateHeaders = () => {
+      const headers: Record<string, string> = {};
+      if (BASE_URL.includes('ngrok')) {
+        headers['ngrok-skip-browser-warning'] = 'true';
+      }
+      return headers;
+    };
     // Hardcoded teacher login logic
     if (userType === "teacher" && username === "teacher" && password === "teacher") {
       // Redirect directly to teacher dashboard
@@ -28,11 +35,13 @@ const LoginForm = ({ userType }: LoginFormProps) => {
 
     // For student login, proceed with API call
     try {
-      const response = await fetch("http://216.48.190.237:5006/api/login", {
+      const response = await fetch(`${BASE_URL}/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...generateHeaders(),
         },
+
         body: JSON.stringify({
           username: username, // Only send username, no email
           password: password,
