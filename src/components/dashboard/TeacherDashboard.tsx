@@ -54,10 +54,10 @@ const TeacherDashboard = () => {
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className={`flex items-center ${collapsed ? "justify-center w-full" : ""}`}>
             {!collapsed && (
-              <img src="/placeholder.svg" alt="HearLink Logo" className="h-8 w-auto mr-3" />
+              <img src="images\Hearlink.png" alt="HearLink Logo" className="h-8 w-auto mr-3" />
             )}
             {!collapsed && <span className="text-xl font-bold text-hearlink-900">HearLink</span>}
-            {collapsed && <img src="/placeholder.svg" alt="HearLink" className="h-8 w-auto" />}
+            {collapsed && <img src="images\Hearlink.png" alt="HearLink" className="h-8 w-auto" />}
           </div>
           <button
             onClick={toggleSidebar}
