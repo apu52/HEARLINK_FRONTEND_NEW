@@ -2,7 +2,7 @@
 import React from "react";
 import SectionHeading from "@/components/ui/section-heading";
 import { Check } from "lucide-react";
-
+import img2 from '/images/SAP-110.jpeg';
 const AboutSection = () => {
   return (
     <section id="about" className="py-16 md:py-24 bg-white">
@@ -72,7 +72,7 @@ const AboutSection = () => {
           <div className="order-1 lg:order-2 relative">
             <div className="relative z-10">
               <img 
-                src="images\SAP-110.jpeg" 
+                src={img2}
                 alt="Team collaboration" 
                 className="rounded-lg shadow-xl object-cover h-full"
               />

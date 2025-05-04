@@ -1,10 +1,11 @@
 
 import React, { useState } from "react";
 import SectionHeading from "@/components/ui/section-heading";
-
+import img1 from "/images/Blee_featured.jpg"
+import img2 from "/images/koshish3.jpg"
 const images = [
   {
-    src: "images/Blee_featured.jpg",
+    src: img1,
     alt: "Students collaborating in classroom",
     title: "Collaborative Learning",
     category: "Classroom",
@@ -22,7 +23,7 @@ const images = [
     category: "Technology",
   },
   {
-    src: "images/koshish3.jpg",
+    src: img2,
     alt: "Student with headphones studying",
     title: "Audio Learning",
     category: "Accessibility",
