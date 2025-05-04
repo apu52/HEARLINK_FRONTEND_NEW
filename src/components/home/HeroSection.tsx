@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import img1 from 'images/istockphoto-1280356530-612x612.jpg'
 
 const HeroSection = () => {
   return (
@@ -69,7 +70,7 @@ const HeroSection = () => {
           <div className="relative">
             <div className="relative z-10 rounded-xl overflow-hidden shadow-xl animate-fade-in">
               <img
-                src="images\istockphoto-1280356530-612x612.jpg"
+                src={img1}
                 alt="Students learning with HearLink"
                 className="w-full h-full object-cover"
               />
