@@ -19,7 +19,8 @@ HearLink is a cloud-native, production-ready EdTech solution that transforms cla
 | ---------------------- | -------------------------------------------------------------------- |
 | 🖥️ Live Web App       | [Try HearLink Now](https://hearlink.vercel.app/)          |
 | 🌍 Main Repository | [GitHub - HearLink Main](https://github.com/swarnojit/HearLink_Pragati_Hackathon)  |
-| 📽️ Pitch Deck         | [View Pitch Deck](https://www.canva.com/design/DAGmfzAcdH4/4gxUesPamWu5EACjuYs_pQ/edit?utm_content=DAGmfzAcdH4&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)          |  Live prototype Video | [Video](https://youtu.be/wGiNR9gEgPk?feature=shared)
+| 📽️ Pitch Deck         | [View Pitch Deck](https://www.canva.com/design/DAGmfzAcdH4/4gxUesPamWu5EACjuYs_pQ/edit?utm_content=DAGmfzAcdH4&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton) 
+|  Live prototype Video | [Video](https://youtu.be/wGiNR9gEgPk?feature=shared)
 
 ---
 
