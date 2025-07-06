@@ -39,7 +39,7 @@ const Hearlink: React.FC = () => {
   const [videoSrc, setVideoSrc] = useState<string>('');
   const [detectedLanguage, setDetectedLanguage] = useState<string>('');
   const [isDetectingLanguage, setIsDetectingLanguage] = useState<boolean>(false);
-  const [outputLanguage, setOutputLanguage] = useState<string>('English');
+  const [outputLanguage, setOutputLanguage] = useState<string>('en');
   const [loading, setLoading] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>('transcript');
@@ -193,16 +193,42 @@ const Hearlink: React.FC = () => {
 
       // Handle YouTube link or file upload
       if (videoUrl) {
-        formData.append('youtube_link', videoUrl);
-        formData.append('target_language', outputLanguage);
-        response = await fetch(`${BASE_URL}/api/transcribelink`, {
+        // Validate YouTube URL
+        if (!videoUrl.trim()) {
+          throw new Error('YouTube URL is empty');
+        }
+
+        console.log('Sending YouTube URL:', videoUrl);
+        console.log('Target language:', outputLanguage);
+
+        formData.append('youtube_link', videoUrl.trim());
+        formData.append('target_language', outputLanguage || 'en');
+
+        // Make sure BASE_URL is properly defined and uses template literals
+        const url = `${BASE_URL}/api/transcribelink`;
+        console.log('Request URL:', url);
+
+        response = await fetch(url, {
           method: 'POST',
           body: formData
+          // Don't set Content-Type header - let browser set it automatically for FormData
         });
       } else if (videoFile) {
+        // Validate file
+        if (!videoFile || videoFile.size === 0) {
+          throw new Error('Video file is empty or invalid');
+        }
+
+        console.log('Sending file:', videoFile.name, 'Size:', videoFile.size);
+        console.log('Target language:', outputLanguage);
+
         formData.append('video', videoFile);
-        formData.append('target_language', outputLanguage);
-        response = await fetch(`${BASE_URL}/api/transcribe`, {
+        formData.append('target_language', outputLanguage || 'en');
+
+        const url = `${BASE_URL}/api/transcribe`;
+        console.log('Request URL:', url);
+
+        response = await fetch(url, {
           method: 'POST',
           body: formData
         });
@@ -210,8 +236,30 @@ const Hearlink: React.FC = () => {
         throw new Error('No video file or URL provided');
       }
 
+      // Log response details for debugging
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        // Try to get error details from response
+        let errorMessage = `Server responded with ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage += ` - ${errorData.error}`;
+          }
+        } catch (e) {
+          // If response is not JSON, try to get text
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage += ` - ${errorText}`;
+            }
+          } catch (e2) {
+            // Ignore if we can't read the response
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -223,7 +271,7 @@ const Hearlink: React.FC = () => {
         setTranscriptData(data);
         setHasGeneratedContent(prev => ({ ...prev, transcript: true }));
         setIsResultsVisible(true);
-        
+
         setTimeout(() => {
           resultsContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
@@ -587,17 +635,17 @@ const Hearlink: React.FC = () => {
                 value={outputLanguage}
                 onChange={(e) => setOutputLanguage(e.target.value)}
               >
-                <option value="English">English</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Bengali">Bengali</option>
-                <option value="Tamil">Tamil</option>
-                <option value="Telugu">Telugu</option>
-                <option value="Marathi">Marathi</option>
-                <option value="Gujarati">Gujarati</option>
-                <option value="Kannada">Kannada</option>
-                <option value="Malayalam">Malayalam</option>
-                <option value="Punjabi">Punjabi</option>
-                <option value="Urdu">Urdu</option>
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="bn">Bengali</option>
+                <option value="ta">Tamil</option>
+                <option value="te">Telugu</option>
+                <option value="mr">Marathi</option>
+                <option value="gu">Gujarati</option>
+                <option value="kn">Kannada</option>
+                <option value="ml">Malayalam</option>
+                <option value="pa">Punjabi</option>
+                <option value="ur">Urdu</option>
               </select>
             </div>
           </div>
